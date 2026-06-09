@@ -7,12 +7,13 @@
     "start": "node index.js",
     "test-db": "node scripts/test-db.js",
     "seed": "node scripts/seed-molduras.js",
+    "seed-materiais": "node scripts/seed-materiais.js",
     "listar": "node scripts/listar-molduras.js",
     "chat": "node scripts/chat.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.0",
-    "@google/genai": "^0.3.0",
+    "@google/genai": "^2.8.0",
     "@supabase/supabase-js": "^2.45.0",
     "baileys": "^7.0.0-rc13",
     "dotenv": "^16.4.5",
