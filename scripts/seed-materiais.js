@@ -1,78 +1,51 @@
 import { supabase } from '../lib/supabase.js';
 
 // =========================================
-// MATERIAIS FAKE — vidros, chapas e espelhos
-// Preços de exemplo! Substituir pelos valores reais
-// quando o catálogo da loja chegar.
+// MATERIAIS DA LOJA — catálogo real (confirmado pelo dono):
+// 2 vidros, 1 chapa e 1 espelho. Os PREÇOS ainda são de
+// exemplo — substituir quando a tabela de valores chegar.
 // =========================================
 const MATERIAIS = [
   // ---------- VIDROS ----------
   {
     sku: 'VID-001',
     tipo: 'vidro',
-    nome: 'Vidro Comum 2mm',
+    nome: 'Vidro Simples 2mm',
     espessura_mm: 2,
     preco_m2: 90.00,
     preco_minimo: 25.00,
-    descricao: 'Vidro transparente comum, o mais usado em quadros.'
+    descricao: 'Vidro transparente simples, o padrão usado em quadros.'
   },
   {
     sku: 'VID-002',
     tipo: 'vidro',
-    nome: 'Vidro Antirreflexo 2mm',
+    nome: 'Vidro Antirreflexo',
     espessura_mm: 2,
     preco_m2: 180.00,
     preco_minimo: 45.00,
     descricao: 'Vidro fosco que elimina reflexos. Ideal pra ambientes com muita luz.'
   },
-  {
-    sku: 'VID-003',
-    tipo: 'vidro',
-    nome: 'Vidro Comum 3mm',
-    espessura_mm: 3,
-    preco_m2: 120.00,
-    preco_minimo: 30.00,
-    descricao: 'Vidro transparente mais espesso, pra quadros grandes.'
-  },
 
-  // ---------- CHAPAS (FUNDO) ----------
+  // ---------- CHAPA (FUNDO) ----------
   {
     sku: 'CHA-001',
     tipo: 'chapa',
-    nome: 'Chapa Eucatex 3mm',
+    nome: 'Chapa Eucatex',
     espessura_mm: 3,
     preco_m2: 35.00,
     preco_minimo: 12.00,
-    descricao: 'Chapa de eucatex pro fundo do quadro. Opção econômica e padrão.'
-  },
-  {
-    sku: 'CHA-002',
-    tipo: 'chapa',
-    nome: 'Chapa MDF 3mm',
-    espessura_mm: 3,
-    preco_m2: 48.00,
-    preco_minimo: 15.00,
-    descricao: 'Chapa de MDF, mais rígida e durável que o eucatex.'
+    descricao: 'Chapa de eucatex pro fundo do quadro. É a única opção de fundo da loja.'
   },
 
-  // ---------- ESPELHOS ----------
+  // ---------- ESPELHO ----------
   {
     sku: 'ESP-001',
     tipo: 'espelho',
-    nome: 'Espelho Prata 3mm',
+    nome: 'Espelho Normal 3mm',
     espessura_mm: 3,
     preco_m2: 250.00,
     preco_minimo: 60.00,
-    descricao: 'Espelho prata de 3mm, pra espelhos decorativos pequenos e médios.'
-  },
-  {
-    sku: 'ESP-002',
-    tipo: 'espelho',
-    nome: 'Espelho Prata 4mm',
-    espessura_mm: 4,
-    preco_m2: 320.00,
-    preco_minimo: 80.00,
-    descricao: 'Espelho prata de 4mm, mais resistente. Recomendado pra espelhos grandes.'
+    descricao: 'Espelho normal de 3mm (não bisotado). É o único tipo de espelho da loja.'
   }
 ];
 
