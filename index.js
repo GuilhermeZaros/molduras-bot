@@ -138,9 +138,16 @@ async function iniciar() {
     for (const msg of messages) {
       const jid = msg.key.remoteJid;
 
-      // Ignora: minhas próprias mensagens, grupos, status e newsletters
+      // Ignora: minhas próprias mensagens, grupos, status e newsletters.
+      // Conversa individual chega como @s.whatsapp.net (formato antigo)
+      // ou @lid (formato novo do WhatsApp) — aceita os dois.
       if (msg.key.fromMe) continue;
-      if (!jid || !jid.endsWith('@s.whatsapp.net')) continue;
+      const ehConversaIndividual =
+        jid && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'));
+      if (!ehConversaIndividual) {
+        console.log(`🙈 Ignorando mensagem de ${jid} (grupo/status/canal)`);
+        continue;
+      }
 
       const texto = extrairTexto(msg);
       if (!texto) continue; // áudio, figurinha etc. — por enquanto só texto
