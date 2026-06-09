@@ -113,11 +113,21 @@ async function iniciar() {
 
     if (connection === 'close') {
       const codigo = lastDisconnect?.error?.output?.statusCode;
+
       if (codigo === DisconnectReason.loggedOut) {
         console.log('🚪 Sessão deslogada. Apague a pasta auth_info_baileys/ e rode de novo pra reconectar.');
         process.exit(1);
       }
-      console.log('🔄 Conexão caiu, reconectando...');
+
+      // 440 = outra instância do bot conectou com a mesma sessão.
+      // Reconectar aqui causaria uma guerra infinita entre as duas.
+      if (codigo === DisconnectReason.connectionReplaced) {
+        console.log('⚠️  Outra instância do bot está rodando com esta sessão.');
+        console.log('   Feche a outra (ou esta) — não rode npm start duas vezes.');
+        process.exit(1);
+      }
+
+      console.log(`🔄 Conexão caiu (código ${codigo ?? '?'}), reconectando...`);
       iniciar();
     }
   });
