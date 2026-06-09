@@ -2,8 +2,8 @@ import { supabase } from '../lib/supabase.js';
 
 // =========================================
 // MATERIAIS DA LOJA — catálogo real (confirmado pelo dono):
-// 2 vidros, 1 chapa e 1 espelho. Os PREÇOS ainda são de
-// exemplo — substituir quando a tabela de valores chegar.
+// 2 vidros, 1 chapa e 1 espelho, com os preços reais por m²
+// passados pelo dono. Preço mínimo ainda não foi definido.
 // =========================================
 const MATERIAIS = [
   // ---------- VIDROS ----------
@@ -12,8 +12,8 @@ const MATERIAIS = [
     tipo: 'vidro',
     nome: 'Vidro Simples 2mm',
     espessura_mm: 2,
-    preco_m2: 90.00,
-    preco_minimo: 25.00,
+    preco_m2: 180.00,
+    preco_minimo: null,
     descricao: 'Vidro transparente simples, o padrão usado em quadros.'
   },
   {
@@ -21,8 +21,8 @@ const MATERIAIS = [
     tipo: 'vidro',
     nome: 'Vidro Antirreflexo',
     espessura_mm: 2,
-    preco_m2: 180.00,
-    preco_minimo: 45.00,
+    preco_m2: 300.00,
+    preco_minimo: null,
     descricao: 'Vidro fosco que elimina reflexos. Ideal pra ambientes com muita luz.'
   },
 
@@ -32,8 +32,8 @@ const MATERIAIS = [
     tipo: 'chapa',
     nome: 'Chapa Eucatex',
     espessura_mm: 3,
-    preco_m2: 35.00,
-    preco_minimo: 12.00,
+    preco_m2: 90.00,
+    preco_minimo: null,
     descricao: 'Chapa de eucatex pro fundo do quadro. É a única opção de fundo da loja.'
   },
 
@@ -43,8 +43,8 @@ const MATERIAIS = [
     tipo: 'espelho',
     nome: 'Espelho Normal 3mm',
     espessura_mm: 3,
-    preco_m2: 250.00,
-    preco_minimo: 60.00,
+    preco_m2: 330.00,
+    preco_minimo: null,
     descricao: 'Espelho normal de 3mm (não bisotado). É o único tipo de espelho da loja.'
   }
 ];
