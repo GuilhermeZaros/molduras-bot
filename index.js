@@ -2,6 +2,9 @@ import makeWASocket, { useMultiFileAuthState, DisconnectReason } from 'baileys';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 import { processarMensagem } from './lib/bot.js';
+import { dividirEmMensagens } from './lib/mensagens.js';
+
+const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
 // =========================================
 // BOT DO WHATSAPP (via Baileys)
@@ -60,8 +63,19 @@ async function responderCliente(sock, jid, texto) {
   // Guarda só as últimas N mensagens pra não estourar tokens
   conversas.set(jid, novoHistorico.slice(-MAX_HISTORICO));
 
-  await sock.sendPresenceUpdate('paused', jid);
-  await sock.sendMessage(jid, { text: resposta });
+  // Envia em "rajada": vários balões curtos, como a Bruna real digita.
+  // O bot separa cada balão por linha em branco (ver SYSTEM_PROMPT).
+  const baloes = dividirEmMensagens(resposta);
+  const mensagens = baloes.length ? baloes : [resposta];
+
+  for (const parte of mensagens) {
+    await sock.sendPresenceUpdate('composing', jid);
+    // delay proporcional ao tamanho, pra parecer digitação (mín 600ms, máx 2.5s)
+    const espera = Math.min(2500, Math.max(600, parte.length * 35));
+    await dormir(espera);
+    await sock.sendPresenceUpdate('paused', jid);
+    await sock.sendMessage(jid, { text: parte });
+  }
 }
 
 function agendarResposta(sock, jid) {
