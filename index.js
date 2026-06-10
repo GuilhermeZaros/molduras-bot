@@ -122,7 +122,7 @@ async function iniciar() {
     }
 
     if (connection === 'open') {
-      console.log('✅ Conectado ao WhatsApp! A Sofia está atendendo. 💬\n');
+      console.log('✅ Conectado ao WhatsApp! A Bruna está atendendo. 💬\n');
     }
 
     if (connection === 'close') {
@@ -177,5 +177,5 @@ async function iniciar() {
   });
 }
 
-console.log('🚀 Iniciando bot da Molduraria Arte & Estilo...');
+console.log('🚀 Iniciando bot da Vera Molduras e Decoração...');
 iniciar();
