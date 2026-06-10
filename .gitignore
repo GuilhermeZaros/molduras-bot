@@ -1,4 +1,5 @@
 node_modules/
+.clasprc.json
 .env
 .env.local
 auth_info_baileys/
