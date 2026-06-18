@@ -18,3 +18,20 @@ test('modelosDe: tipo invalido lanca', () => {
 test('MODELOS: urls usam o thumbnail do Drive', () => {
   assert.ok(MODELOS.certificado.every(m => m.url.includes('drive.google.com/thumbnail?id=')));
 });
+
+import { executarTool } from '../lib/tools.js';
+
+test('enviar_modelos: manda as fotos do tipo via contexto.enviarFoto e nao vaza url', async () => {
+  const enviadas = [];
+  const contexto = { enviarFoto: async (url, legenda) => { enviadas.push({ url, legenda }); } };
+  const r = await executarTool('enviar_modelos', { tipo: 'certificado' }, contexto);
+  assert.equal(enviadas.length, 3);
+  assert.ok(enviadas[0].url.startsWith('http'));
+  assert.equal(r.enviados, 3);
+  assert.equal(r.tipo, 'certificado');
+  assert.equal(JSON.stringify(r).includes('http'), false);
+});
+test('enviar_modelos: tipo invalido devolve erro (nao quebra)', async () => {
+  const r = await executarTool('enviar_modelos', { tipo: 'xpto' }, {});
+  assert.ok(r.erro);
+});
