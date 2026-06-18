@@ -1,8 +1,9 @@
-import makeWASocket, { useMultiFileAuthState, DisconnectReason } from 'baileys';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason, downloadMediaMessage } from 'baileys';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 import { processarMensagem } from './lib/bot.js';
 import { dividirEmMensagens } from './lib/mensagens.js';
+import { classificarMensagem, transcreverAudio, entenderImagem } from './lib/midia.js';
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -32,15 +33,35 @@ const filas = new Map();
 const buffers = new Map();
 const ESPERA_BUFFER_MS = 4000;
 
-function extrairTexto(msg) {
-  const m = msg.message;
-  if (!m) return null;
-  return (
-    m.conversation ||
-    m.extendedTextMessage?.text ||
-    m.imageMessage?.caption ||
-    null
-  );
+const FALLBACK_MIDIA = 'Recebi sua mensagem 😊 mas não consegui abrir o áudio/foto aqui — pode mandar de novo, ou me escrever em texto?';
+
+// Extrai o texto da mensagem. Texto vem direto; áudio é transcrito; foto é "entendida".
+// Áudio/foto que falharem viram uma mensagem de fallback (em vez de silêncio). Outros tipos → null.
+async function extrairConteudo(sock, msg) {
+  const c = classificarMensagem(msg);
+  if (c.tipo === 'texto') return c.texto;
+  if (c.tipo !== 'imagem' && c.tipo !== 'audio') return null; // figurinha/vídeo/doc/vazio → ignora
+
+  await sock.sendPresenceUpdate('composing', msg.key.remoteJid).catch(() => {});
+  try {
+    const buffer = await downloadMediaMessage(msg, 'buffer', {}, {
+      logger: pino({ level: 'silent' }),
+      reuploadRequest: sock.updateMediaMessage
+    });
+    if (c.tipo === 'audio') {
+      const mime = msg.message.audioMessage.mimetype || 'audio/ogg';
+      const texto = await transcreverAudio(buffer, mime);
+      console.log(`🎤 áudio transcrito: ${texto}`);
+      return texto || FALLBACK_MIDIA;
+    }
+    const mime = msg.message.imageMessage.mimetype || 'image/jpeg';
+    const texto = await entenderImagem(buffer, mime, c.legenda);
+    console.log(`🖼️  foto entendida: ${texto}`);
+    return texto;
+  } catch (err) {
+    console.error('❌ erro processando mídia:', err.message);
+    return FALLBACK_MIDIA;
+  }
 }
 
 async function responderCliente(sock, jid, texto) {
@@ -163,8 +184,8 @@ async function iniciar() {
         continue;
       }
 
-      const texto = extrairTexto(msg);
-      if (!texto) continue; // áudio, figurinha etc. — por enquanto só texto
+      const texto = await extrairConteudo(sock, msg);
+      if (!texto) continue; // figurinha/vídeo/documento — ignorados por enquanto
 
       console.log(`📩 ${jid.split('@')[0]}: ${texto}`);
 
