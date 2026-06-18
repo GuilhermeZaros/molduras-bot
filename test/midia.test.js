@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-// claude.js exige GEMINI_API_KEY no import; nos testes puros não chamamos a API.
+// gemini.js exige GEMINI_API_KEY no import; nos testes puros não chamamos a API.
 process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'test-dummy';
 const g = await import('../lib/midia.js');
 
