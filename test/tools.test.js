@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { semFotoUrl, extrairChamadasFotoTexto, extrairChamadasModelosTexto } from '../lib/tools.js';
+import { semFotoUrl, extrairChamadasFotoTexto, extrairChamadasModelosTexto, textoTemChamadaDeFerramenta } from '../lib/tools.js';
+
+test('textoTemChamadaDeFerramenta: detecta calcular_orcamento/buscar_molduras narrados', () => {
+  assert.equal(textoTemChamadaDeFerramenta('[calcular_orcamento(altura_cm=35.7, largura_cm=27)]'), true);
+  assert.equal(textoTemChamadaDeFerramenta('buscar_molduras(cor="preto")'), true);
+});
+test('textoTemChamadaDeFerramenta: texto normal nao dispara', () => {
+  assert.equal(textoTemChamadaDeFerramenta('Com vidro R$ 100, sem vidro R$ 70. Qual prefere?'), false);
+});
 
 // Rede de segurança do enviar_modelos: o modelo às vezes escreve [enviar_modelos tipo="X"] como texto.
 test('extrairChamadasModelosTexto: pega [enviar_modelos tipo="certificado"] e limpa o texto', () => {
