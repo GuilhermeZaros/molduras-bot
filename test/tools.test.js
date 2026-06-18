@@ -1,6 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { semFotoUrl, extrairChamadasFotoTexto } from '../lib/tools.js';
+import { semFotoUrl, extrairChamadasFotoTexto, extrairChamadasModelosTexto } from '../lib/tools.js';
+
+// Rede de segurança do enviar_modelos: o modelo às vezes escreve [enviar_modelos tipo="X"] como texto.
+test('extrairChamadasModelosTexto: pega [enviar_modelos tipo="certificado"] e limpa o texto', () => {
+  const r = extrairChamadasModelosTexto('[enviar_modelos tipo="certificado"]\n\nMe diz o número (1, 2 ou 3) 👍');
+  assert.deepEqual(r.tipos, ['certificado']);
+  assert.equal(r.texto, 'Me diz o número (1, 2 ou 3) 👍');
+  assert.equal(/enviar_modelos|\[/.test(r.texto), false);
+});
+test('extrairChamadasModelosTexto: com parenteses e aspas simples', () => {
+  const r = extrairChamadasModelosTexto("Oi! enviar_modelos(tipo='camiseta') tudo bem?");
+  assert.deepEqual(r.tipos, ['camiseta']);
+});
+test('extrairChamadasModelosTexto: texto normal nao muda', () => {
+  const r = extrairChamadasModelosTexto('Com vidro R$ 100, sem vidro R$ 70.');
+  assert.deepEqual(r.tipos, []);
+  assert.equal(r.texto, 'Com vidro R$ 100, sem vidro R$ 70.');
+});
 
 // Rede de segurança: se o modelo ESCREVER a chamada da tool como texto
 // (ex: [enviar_foto(moldura_id="X", legenda="Y")]), a gente detecta, executa e tira do texto.
