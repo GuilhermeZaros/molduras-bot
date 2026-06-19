@@ -4,6 +4,7 @@ import pino from 'pino';
 import { processarMensagem } from './lib/bot.js';
 import { dividirEmMensagens } from './lib/mensagens.js';
 import { classificarMensagem, transcreverAudio, entenderImagem } from './lib/midia.js';
+import { lerHistorico, gravarHistorico } from './lib/historico.js';
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -18,10 +19,9 @@ const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 // escanear na primeira vez.
 // =========================================
 
-// Histórico de conversa por contato (em memória).
-// Se o bot reiniciar, as conversas zeram — persistir no
-// Supabase é a próxima fase.
-const conversas = new Map();
+// Histórico de conversa por contato. Carregado do disco no boot e salvo a cada turno
+// (lib/historico.js) — sobrevive a reinício/crash/reconexão (antes ficava só em memória e zerava).
+const conversas = new Map(Object.entries(lerHistorico()));
 const MAX_HISTORICO = 40; // limita tokens enviados ao Gemini
 
 // Fila por contato: garante que mensagens do mesmo cliente
@@ -83,6 +83,7 @@ async function responderCliente(sock, jid, texto) {
 
   // Guarda só as últimas N mensagens pra não estourar tokens
   conversas.set(jid, novoHistorico.slice(-MAX_HISTORICO));
+  gravarHistorico(Object.fromEntries(conversas)); // persiste pro contexto sobreviver a restart
 
   // Envia em "rajada": vários balões curtos, como a Bruna real digita.
   // O bot separa cada balão por linha em branco (ver SYSTEM_PROMPT).

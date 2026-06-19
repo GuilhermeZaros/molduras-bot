@@ -3,6 +3,7 @@ node_modules/
 .env
 .env.local
 auth_info_baileys/
+dados/
 *.log
 .DS_Store
 /tmp
