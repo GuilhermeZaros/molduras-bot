@@ -3,33 +3,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { lerHistorico, gravarHistorico, apararHistorico, enxugarHistorico } from '../lib/historico.js';
-
-test('enxugarHistorico: tira turnos de ferramenta, mantém só a conversa em texto', () => {
-  const h = [
-    { role: 'user', parts: [{ text: 'quero um quadro' }] },
-    { role: 'model', parts: [{ functionCall: { name: 'buscar_molduras', args: {} } }] },
-    { role: 'user', parts: [{ functionResponse: { name: 'buscar_molduras', response: { molduras: [] } } }] },
-    { role: 'model', parts: [{ text: 'achei essas opções' }] },
-    { role: 'user', parts: [{ text: 'a 2' }] }
-  ];
-  const r = enxugarHistorico(h);
-  assert.deepEqual(r, [
-    { role: 'user', parts: [{ text: 'quero um quadro' }] },
-    { role: 'model', parts: [{ text: 'achei essas opções' }] },
-    { role: 'user', parts: [{ text: 'a 2' }] }
-  ]);
-});
-
-test('enxugarHistorico: turno com texto E functionCall mantém só o texto', () => {
-  const h = [{ role: 'model', parts: [{ text: 'já te mando' }, { functionCall: { name: 'x', args: {} } }] }];
-  assert.deepEqual(enxugarHistorico(h), [{ role: 'model', parts: [{ text: 'já te mando' }] }]);
-});
-
-test('enxugarHistorico: vazio/undefined devolve []', () => {
-  assert.deepEqual(enxugarHistorico([]), []);
-  assert.deepEqual(enxugarHistorico(undefined), []);
-});
+import { lerHistorico, gravarHistorico, apararHistorico } from '../lib/historico.js';
 
 const FC = (n) => ({ role: 'model', parts: [{ functionCall: { name: n, args: {} } }] });
 const FR = (n) => ({ role: 'user', parts: [{ functionResponse: { name: n, response: {} } }] });

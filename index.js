@@ -4,7 +4,7 @@ import pino from 'pino';
 import { processarMensagem } from './lib/bot.js';
 import { dividirEmMensagens } from './lib/mensagens.js';
 import { classificarMensagem, transcreverAudio, entenderImagem } from './lib/midia.js';
-import { lerHistorico, gravarHistorico, apararHistorico, enxugarHistorico } from './lib/historico.js';
+import { lerHistorico, gravarHistorico, apararHistorico } from './lib/historico.js';
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -71,9 +71,10 @@ async function responderCliente(sock, jid, texto) {
     }
   };
 
-  // Enxuga (só conversa em texto, sem o JSON cru das tools = menos token) e apara já na leitura
-  // (cura histórico salvo com par quebrado — functionResponse órfão — que o Gemini recusaria).
-  const historico = apararHistorico(enxugarHistorico(conversas.get(jid) || []), MAX_HISTORICO);
+  // Apara já na leitura: limita o tamanho e cura um histórico salvo com par quebrado
+  // (functionResponse órfão) que o Gemini recusaria. Mantém os resultados das tools no histórico
+  // (o modelo precisa dos CÓDIGOS reais das molduras pra mandar foto/cotar no turno seguinte).
+  const historico = apararHistorico(conversas.get(jid) || [], MAX_HISTORICO);
 
   await sock.sendPresenceUpdate('composing', jid);
 
@@ -83,9 +84,9 @@ async function responderCliente(sock, jid, texto) {
     contexto
   );
 
-  // Guarda só a conversa em texto (enxuga as tools) e limita o tamanho — economiza token e
-  // mantém o contexto. (enxugar tira os turnos de ferramenta; aparar limita e começa em msg válida.)
-  conversas.set(jid, apararHistorico(enxugarHistorico(novoHistorico), MAX_HISTORICO));
+  // Guarda as últimas N entradas (com os resultados das tools, pros códigos sobreviverem ao
+  // próximo turno); apararHistorico limita e nunca deixa começar num par quebrado.
+  conversas.set(jid, apararHistorico(novoHistorico, MAX_HISTORICO));
   gravarHistorico(Object.fromEntries(conversas)); // persiste pro contexto sobreviver a restart
 
   // Envia em "rajada": vários balões curtos, como a Bruna real digita.
