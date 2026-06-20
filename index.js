@@ -5,6 +5,7 @@ import { processarMensagem } from './lib/bot.js';
 import { dividirEmMensagens } from './lib/mensagens.js';
 import { classificarMensagem, transcreverAudio, entenderImagem } from './lib/midia.js';
 import { lerHistorico, gravarHistorico, apararHistorico } from './lib/historico.js';
+import { deveEsperarDigitando } from './lib/espera.js';
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -28,10 +29,14 @@ const MAX_HISTORICO = 40; // limita tokens enviados ao Gemini
 // sejam processadas uma de cada vez, na ordem.
 const filas = new Map();
 
-// Buffer de digitação: cliente de WhatsApp manda várias
-// mensagens curtas seguidas; espera 4s e junta tudo numa só.
+// Buffer de digitação: junta as mensagens que o cliente manda quebradas e só responde quando ele
+// PARA de digitar (usa o status "digitando" do WhatsApp), com um teto pra nunca travar.
 const buffers = new Map();
-const ESPERA_BUFFER_MS = 4000;
+const digitando = new Map();        // jid -> timestamp do último "digitando" (composing) do cliente
+const ESPERA_BASE_MS = 3000;        // espera base depois da última mensagem antes de responder
+const RECHECAGEM_MS = 2000;         // se ainda está digitando, checa de novo nesse intervalo
+const COMPONDO_VALIDADE_MS = 6000;  // um "digitando" vale por até 6s (o WhatsApp reenvia enquanto digita)
+const ESPERA_MAX_MS = 15000;        // teto absoluto: nunca segura a resposta mais que isso
 
 const FALLBACK_MIDIA = 'Recebi sua mensagem 😊 mas não consegui abrir o áudio/foto aqui — pode mandar de novo, ou me escrever em texto?';
 
@@ -105,27 +110,38 @@ async function responderCliente(sock, jid, texto) {
 }
 
 function agendarResposta(sock, jid) {
-  // (Re)inicia o timer: se chegar outra mensagem em até 4s,
-  // espera mais um pouco antes de responder tudo junto.
+  // (Re)inicia o timer base: a cada mensagem nova, espera de novo antes de checar se responde.
   const buffer = buffers.get(jid);
+  if (!buffer) return;
   clearTimeout(buffer.timer);
+  buffer.timer = setTimeout(() => verificarEResponder(sock, jid), ESPERA_BASE_MS);
+}
 
-  buffer.timer = setTimeout(() => {
-    const textoCompleto = buffer.textos.join('\n');
-    buffers.delete(jid);
+// Só responde quando o cliente PAROU de digitar (ou bateu o teto). Enquanto ele estiver digitando,
+// segura e checa de novo — assim "ola" + "boa noite" viram uma resposta só.
+function verificarEResponder(sock, jid) {
+  const buffer = buffers.get(jid);
+  if (!buffer) return;
 
-    // Encadeia na fila do contato pra processar em ordem
-    const filaAnterior = filas.get(jid) || Promise.resolve();
-    const novaFila = filaAnterior
-      .then(() => responderCliente(sock, jid, textoCompleto))
-      .catch(async (err) => {
-        console.error(`❌ Erro respondendo ${jid}:`, err.message);
-        await sock.sendMessage(jid, {
-          text: 'Opa, deu um probleminha aqui no sistema 😅 Pode mandar de novo?'
-        }).catch(() => {});
-      });
-    filas.set(jid, novaFila);
-  }, ESPERA_BUFFER_MS);
+  if (deveEsperarDigitando(digitando.get(jid), buffer.ultimaMsg, Date.now(), COMPONDO_VALIDADE_MS, ESPERA_MAX_MS)) {
+    buffer.timer = setTimeout(() => verificarEResponder(sock, jid), RECHECAGEM_MS);
+    return;
+  }
+
+  const textoCompleto = buffer.textos.join('\n');
+  buffers.delete(jid);
+
+  // Encadeia na fila do contato pra processar em ordem
+  const filaAnterior = filas.get(jid) || Promise.resolve();
+  const novaFila = filaAnterior
+    .then(() => responderCliente(sock, jid, textoCompleto))
+    .catch(async (err) => {
+      console.error(`❌ Erro respondendo ${jid}:`, err.message);
+      await sock.sendMessage(jid, {
+        text: 'Opa, deu um probleminha aqui no sistema 😅 Pode mandar de novo?'
+      }).catch(() => {});
+    });
+  filas.set(jid, novaFila);
 }
 
 async function iniciar() {
@@ -137,6 +153,16 @@ async function iniciar() {
   });
 
   sock.ev.on('creds.update', saveCreds);
+
+  // Status "digitando" do cliente: marca o timestamp enquanto ele está compondo; ao parar, zera.
+  // É o que deixa a Julia esperar o cliente terminar antes de responder.
+  sock.ev.on('presence.update', ({ id, presences }) => {
+    if (!id || !presences) return;
+    const info = presences[id] || Object.values(presences)[0];
+    const p = info && info.lastKnownPresence;
+    if (!p) return;
+    digitando.set(id, p === 'composing' ? Date.now() : 0);
+  });
 
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
@@ -197,7 +223,10 @@ async function iniciar() {
       if (!buffers.has(jid)) {
         buffers.set(jid, { textos: [], timer: null });
       }
-      buffers.get(jid).textos.push(texto);
+      const buf = buffers.get(jid);
+      buf.textos.push(texto);
+      buf.ultimaMsg = Date.now();
+      sock.presenceSubscribe(jid).catch(() => {}); // pra receber o "digitando" do cliente
       agendarResposta(sock, jid);
     }
   });
