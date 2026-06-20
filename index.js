@@ -89,7 +89,7 @@ async function responderCliente(sock, jid, texto) {
   conversas.set(jid, apararHistorico(novoHistorico, MAX_HISTORICO));
   gravarHistorico(Object.fromEntries(conversas)); // persiste pro contexto sobreviver a restart
 
-  // Envia em "rajada": vários balões curtos, como a Bruna real digita.
+  // Envia em "rajada": vários balões curtos, como a Julia real digita.
   // O bot separa cada balão por linha em branco (ver SYSTEM_PROMPT).
   const baloes = dividirEmMensagens(resposta);
   const mensagens = baloes.length ? baloes : [resposta];
@@ -148,7 +148,7 @@ async function iniciar() {
     }
 
     if (connection === 'open') {
-      console.log('✅ Conectado ao WhatsApp! A Bruna está atendendo. 💬\n');
+      console.log('✅ Conectado ao WhatsApp! A Julia está atendendo. 💬\n');
     }
 
     if (connection === 'close') {

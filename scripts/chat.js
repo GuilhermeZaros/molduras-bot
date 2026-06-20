@@ -8,7 +8,7 @@ const rl = readline.createInterface({
 
 const pergunta = (q) => new Promise(r => rl.question(q, r));
 
-console.log('💬 Chat com a Bruna (atendente IA)');
+console.log('💬 Chat com a Julia (atendente IA)');
 console.log('   Digite suas mensagens como se fosse cliente no WhatsApp.');
 console.log('   Comandos: "sair" pra encerrar, "limpar" pra reiniciar a conversa.\n');
 
@@ -32,14 +32,14 @@ while (true) {
   if (!msg.trim()) continue;
 
   try {
-    process.stdout.write('🤔 Bruna tá digitando...\n');
+    process.stdout.write('🤔 Julia tá digitando...\n');
     const inicio = Date.now();
 
     const { resposta, historico: novoHistorico } = await processarMensagem(historico, msg);
     historico = novoHistorico;
 
     const tempo = ((Date.now() - inicio) / 1000).toFixed(1);
-    console.log(`\n🤖 Bruna (${tempo}s): ${resposta}\n`);
+    console.log(`\n🤖 Julia (${tempo}s): ${resposta}\n`);
   } catch (err) {
     console.error('❌ Erro:', err.message);
     console.error(err);
