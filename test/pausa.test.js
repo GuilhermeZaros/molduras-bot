@@ -58,3 +58,12 @@ test('estaPausado: conversa sem a etiqueta de pausa -> false', () => {
 test('estaPausado: jid sem associação nenhuma -> false', () => {
   assert.equal(estaPausado({ labels: {}, assocs: {} }, 'z@x', CFG), false);
 });
+test('estaPausado: cfg.id setado mas labelId diferente -> false', () => {
+  const e = aoAssociar({ labels: {}, assocs: {} }, { association: { chatId: 'c@x', labelId: 'L1' }, type: 'add' });
+  assert.equal(estaPausado(e, 'c@x', { nome: '', id: 'L2' }), false);
+});
+test('aoAssociar: evento com type ausente não corrompe o estado', () => {
+  const base = aoAssociar({ labels: {}, assocs: {} }, { association: { chatId: 'c@x', labelId: 'L1' }, type: 'add' });
+  const depois = aoAssociar(base, { association: { chatId: 'c@x', labelId: 'L1' } }); // sem type
+  assert.equal(depois.assocs['c@x']['L1'], true); // intacto
+});
