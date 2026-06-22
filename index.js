@@ -6,6 +6,7 @@ import { dividirEmMensagens } from './lib/mensagens.js';
 import { classificarMensagem, transcreverAudio, entenderImagem } from './lib/midia.js';
 import { lerHistorico, gravarHistorico, apararHistorico } from './lib/historico.js';
 import { deveEsperarDigitando } from './lib/espera.js';
+import { verificarOficina, buscarPendentesHTTP, confirmarAvisoHTTP } from './lib/oficina.js';
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -39,6 +40,27 @@ const COMPONDO_VALIDADE_MS = 6000;  // um "digitando" vale por até 6s (o WhatsA
 const ESPERA_MAX_MS = 15000;        // teto absoluto: nunca segura a resposta mais que isso
 
 const FALLBACK_MIDIA = 'Recebi sua mensagem 😊 mas não consegui abrir o áudio/foto aqui — pode mandar de novo, ou me escrever em texto?';
+
+// Oficina: a cada ciclo a Julia checa a planilha por quadros marcados como prontos e avisa o cliente.
+let oficinaTimer = null;
+const OFICINA_POLL_MS = 60000;
+
+function rodarPollOficina(sock) {
+  if (!process.env.OFICINA_TOKEN) return; // sem token configurado: oficina desligada
+  verificarOficina({
+    buscarPendentes: buscarPendentesHTTP,
+    onWhatsApp: async (tel) => {
+      const r = await sock.onWhatsApp(tel);
+      const hit = Array.isArray(r) && r.find((x) => x && x.exists);
+      return hit ? hit.jid : null;
+    },
+    enviar: (jid, texto) => sock.sendMessage(jid, { text: texto }),
+    confirmar: confirmarAvisoHTTP,
+    log: (m) => console.log('🏭 ' + m)
+  })
+    .then((n) => { if (n) console.log(`🏭 oficina: ${n} cliente(s) avisado(s)`); })
+    .catch((e) => console.error('🏭 oficina poll erro:', e.message));
+}
 
 // Extrai o texto da mensagem. Texto vem direto; áudio é transcrito; foto é "entendida".
 // Áudio/foto que falharem viram uma mensagem de fallback (em vez de silêncio). Outros tipos → null.
@@ -175,6 +197,13 @@ async function iniciar() {
 
     if (connection === 'open') {
       console.log('✅ Conectado ao WhatsApp! A Julia está atendendo. 💬\n');
+      // (Re)inicia o poll da oficina ligado a ESTE sock (reconexão cria um sock novo).
+      if (oficinaTimer) clearInterval(oficinaTimer);
+      if (process.env.OFICINA_TOKEN) {
+        rodarPollOficina(sock); // uma vez já no boot
+        oficinaTimer = setInterval(() => rodarPollOficina(sock), OFICINA_POLL_MS);
+        console.log('🏭 Aviso automático da oficina ligado (checando a cada 60s).');
+      }
     }
 
     if (connection === 'close') {
