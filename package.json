@@ -4,7 +4,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node --use-system-ca index.js",
     "test": "node --test test/*.test.js",
     "test-db": "node scripts/test-db.js",
     "seed": "node scripts/seed-molduras.js",
