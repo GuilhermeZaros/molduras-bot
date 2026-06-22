@@ -20,6 +20,10 @@ test('extrairDialogo: histórico vazio -> string vazia', () => {
   assert.equal(extrairDialogo([]), '');
   assert.equal(extrairDialogo(null), '');
 });
+test('extrairDialogo: junta várias partes de texto do mesmo turno com espaço', () => {
+  const hist = [{ role: 'user', parts: [{ text: 'oi' }, { text: 'quero uma moldura' }] }];
+  assert.equal(extrairDialogo(hist), 'Cliente: oi quero uma moldura');
+});
 
 // ---- formatarNumero ----
 test('formatarNumero: celular BR com DDI vira "DD 9XXXX-XXXX"', () => {
