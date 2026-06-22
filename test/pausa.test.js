@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { rmSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { aoEditarLabel, aoAssociar, estaPausado, lerPausados, gravarPausados } from '../lib/pausa.js';
 
 const CFG = { nome: 'Pausar Julia', id: '' };
@@ -82,6 +82,15 @@ test('gravarPausados/lerPausados: round-trip', () => {
     const estado = { labels: { L1: 'Pausar Julia' }, assocs: { 'c@x': { L1: true } } };
     gravarPausados(estado, caminho);
     assert.deepEqual(lerPausados(caminho), estado);
+  } finally {
+    rmSync(caminho, { force: true });
+  }
+});
+test('lerPausados: JSON corrompido -> estado vazio', () => {
+  const caminho = path.join(tmpdir(), `pausa-test-${Date.now()}-c.json`);
+  try {
+    writeFileSync(caminho, 'CORROMPIDO{', 'utf8');
+    assert.deepEqual(lerPausados(caminho), { labels: {}, assocs: {} });
   } finally {
     rmSync(caminho, { force: true });
   }
