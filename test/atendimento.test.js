@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // lib/gemini.js exige GEMINI_API_KEY no import. Setar um dummy antes de importar resumo.js.
 process.env.GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'dummy-para-teste';
 
-const { extrairDialogo, formatarNumero, montarMensagemResumo } = await import('../lib/resumo.js');
+const { extrairDialogo, formatarNumero, montarMensagemResumo, gerarResumo } = await import('../lib/resumo.js');
 
 // ---- extrairDialogo ----
 test('extrairDialogo: monta Cliente/Julia só do texto, ignora tool parts', () => {
@@ -46,4 +46,10 @@ test('montarMensagemResumo: resumo nulo -> mensagem de fallback', () => {
   const m = montarMensagemResumo('5544999999999@s.whatsapp.net', null);
   assert.match(m, /Atendimento encerrado com o cliente 44 99999-9999/);
   assert.match(m, /Não consegui gerar o resumo/);
+});
+
+// ---- gerarResumo ----
+test('gerarResumo: histórico sem diálogo -> null sem chamar a API', async () => {
+  assert.equal(await gerarResumo([]), null);
+  assert.equal(await gerarResumo(null), null);
 });
