@@ -73,6 +73,11 @@ test('detectarDespedida: pergunta/saudação normal -> false', () => {
     assert.equal(detectarDespedida(t), false, t);
   }
 });
+test('detectarDespedida: não confunde reclamação/pedido com fechamento', () => {
+  for (const t of ['não era isso que eu pedi', 'agradeceria uma resposta']) {
+    assert.equal(detectarDespedida(t), false, t);
+  }
+});
 
 // ---- avaliarAtendimento ----
 const cfg = { SILENCIO_MS: 10800000, FOLGA_DESPEDIDA_MS: 300000, ESQUECER_MS: 259200000 };
