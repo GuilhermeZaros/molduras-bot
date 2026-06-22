@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { aoEditarLabel, aoAssociar, estaPausado } from '../lib/pausa.js';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { rmSync } from 'node:fs';
+import { aoEditarLabel, aoAssociar, estaPausado, lerPausados, gravarPausados } from '../lib/pausa.js';
 
 const CFG = { nome: 'Pausar Julia', id: '' };
 
@@ -66,4 +69,20 @@ test('aoAssociar: evento com type ausente não corrompe o estado', () => {
   const base = aoAssociar({ labels: {}, assocs: {} }, { association: { chatId: 'c@x', labelId: 'L1' }, type: 'add' });
   const depois = aoAssociar(base, { association: { chatId: 'c@x', labelId: 'L1' } }); // sem type
   assert.equal(depois.assocs['c@x']['L1'], true); // intacto
+});
+
+// ---- persistência ----
+test('lerPausados: arquivo ausente -> estado vazio', () => {
+  const caminho = path.join(tmpdir(), `pausa-test-${Date.now()}-a.json`);
+  assert.deepEqual(lerPausados(caminho), { labels: {}, assocs: {} });
+});
+test('gravarPausados/lerPausados: round-trip', () => {
+  const caminho = path.join(tmpdir(), `pausa-test-${Date.now()}-b.json`);
+  try {
+    const estado = { labels: { L1: 'Pausar Julia' }, assocs: { 'c@x': { L1: true } } };
+    gravarPausados(estado, caminho);
+    assert.deepEqual(lerPausados(caminho), estado);
+  } finally {
+    rmSync(caminho, { force: true });
+  }
 });
