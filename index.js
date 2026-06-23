@@ -157,6 +157,13 @@ async function extrairConteudo(sock, msg) {
 }
 
 async function responderCliente(sock, jid, texto) {
+  // Corrida com a etiqueta: se a conversa foi pausada DEPOIS que esta resposta entrou na fila,
+  // não responde (o humano assumiu). Fecha o caso de uma resposta em voo no momento da pausa.
+  if (estaPausado(pausa, jid, PAUSA_CFG)) {
+    console.log(`⏸️  ${jid.split('@')[0]}: pausada durante o processamento — descartando resposta`);
+    return;
+  }
+
   const contexto = {
     enviarFoto: async (url, legenda) => {
       await sock.sendMessage(jid, { image: { url }, caption: legenda });
@@ -254,8 +261,8 @@ async function iniciar() {
   // Etiquetas do WhatsApp Business: mantém o mapa nome↔id e as associações conversa↔etiqueta,
   // pra pausar a Julia nas conversas etiquetadas com ETIQUETA_PAUSA.
   sock.ev.on('labels.edit', (label) => {
-    pausa = aoEditarLabel(pausa, label);
-    gravarPausados(pausa);
+    const novo = aoEditarLabel(pausa, label);
+    if (novo !== pausa) { pausa = novo; gravarPausados(pausa); } // só grava se mudou
     if (label && label.id) {
       console.log(`🏷️  etiqueta ${label.id} = "${label.name}"${label.deleted ? ' (apagada)' : ''}`);
     }
@@ -264,8 +271,8 @@ async function iniciar() {
     const a = ev && ev.association;
     const jid = a && a.chatId;
     const antes = jid ? estaPausado(pausa, jid, PAUSA_CFG) : false;
-    pausa = aoAssociar(pausa, ev);
-    gravarPausados(pausa);
+    const novo = aoAssociar(pausa, ev);
+    if (novo !== pausa) { pausa = novo; gravarPausados(pausa); } // ignora no-op/assoc de mensagem
     if (jid && !a.messageId) {
       const agora = estaPausado(pausa, jid, PAUSA_CFG);
       if (agora && !antes) {
