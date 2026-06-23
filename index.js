@@ -12,6 +12,7 @@ import {
   verificarAtendimentos, CONFIG_PADRAO
 } from './lib/atendimento.js';
 import { gerarResumo } from './lib/resumo.js';
+import { lerPausados, gravarPausados, aoEditarLabel, aoAssociar, estaPausado } from './lib/pausa.js';
 
 const dormir = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -39,6 +40,12 @@ const filas = new Map();
 // Carregado do disco no boot; salvo a cada mudança. Base do resumo + expiração de 72h.
 const atendimentos = lerAtendimentos();
 const NUMERO_RESUMO = process.env.NUMERO_RESUMO || '44999999999';
+
+// Pausa por etiqueta: conversas etiquetadas no WhatsApp Business em que a Julia não responde.
+let pausa = lerPausados();
+const ETIQUETA_PAUSA = process.env.ETIQUETA_PAUSA || 'Pausar Julia';
+const ETIQUETA_PAUSA_ID = process.env.ETIQUETA_PAUSA_ID || ''; // plano B: casar por id em vez de nome
+const PAUSA_CFG = { nome: ETIQUETA_PAUSA, id: ETIQUETA_PAUSA_ID };
 
 // Buffer de digitação: junta as mensagens que o cliente manda quebradas e só responde quando ele
 // PARA de digitar (usa o status "digitando" do WhatsApp), com um teto pra nunca travar.
@@ -77,7 +84,14 @@ function rodarPollOficina(sock) {
 
 function rodarVarreduraAtendimentos(sock) {
   verificarAtendimentos({
-    listarAtendimentos: () => atendimentos,
+    listarAtendimentos: () => {
+      // Conversa pausada por etiqueta (humano cuidando) não gera resumo nem expira.
+      const ativos = {};
+      for (const [j, m] of Object.entries(atendimentos)) {
+        if (!estaPausado(pausa, j, PAUSA_CFG)) ativos[j] = m;
+      }
+      return ativos;
+    },
     lerConversa: (jid) => conversas.get(jid) || [],
     gerarResumo,
     onWhatsApp: async (numero) => {
@@ -237,6 +251,34 @@ async function iniciar() {
     digitando.set(id, p === 'composing' ? Date.now() : 0);
   });
 
+  // Etiquetas do WhatsApp Business: mantém o mapa nome↔id e as associações conversa↔etiqueta,
+  // pra pausar a Julia nas conversas etiquetadas com ETIQUETA_PAUSA.
+  sock.ev.on('labels.edit', (label) => {
+    pausa = aoEditarLabel(pausa, label);
+    gravarPausados(pausa);
+    if (label && label.id) {
+      console.log(`🏷️  etiqueta ${label.id} = "${label.name}"${label.deleted ? ' (apagada)' : ''}`);
+    }
+  });
+  sock.ev.on('labels.association', (ev) => {
+    const a = ev && ev.association;
+    const jid = a && a.chatId;
+    const antes = jid ? estaPausado(pausa, jid, PAUSA_CFG) : false;
+    pausa = aoAssociar(pausa, ev);
+    gravarPausados(pausa);
+    if (jid && !a.messageId) {
+      const agora = estaPausado(pausa, jid, PAUSA_CFG);
+      if (agora && !antes) {
+        // Ao pausar, descarta mensagem em voo daquele chat (não responde atrasado ao religar).
+        const buf = buffers.get(jid);
+        if (buf) { clearTimeout(buf.timer); buffers.delete(jid); }
+        console.log(`⏸️  ${jid.split('@')[0]}: pausada por etiqueta`);
+      } else if (!agora && antes) {
+        console.log(`▶️  ${jid.split('@')[0]}: etiqueta removida — Julia volta a responder`);
+      }
+    }
+  });
+
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
 
@@ -297,6 +339,13 @@ async function iniciar() {
         jid && (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid'));
       if (!ehConversaIndividual) {
         console.log(`🙈 Ignorando mensagem de ${jid} (grupo/status/canal)`);
+        continue;
+      }
+
+      // Conversa pausada por etiqueta: ignora por completo (não bufferiza, não enfileira, não
+      // guarda no histórico, não toca no estado de atendimento). Religar não responde nada antigo.
+      if (estaPausado(pausa, jid, PAUSA_CFG)) {
+        console.log(`⏸️  ${jid.split('@')[0]}: conversa pausada (etiqueta) — ignorando`);
         continue;
       }
 
