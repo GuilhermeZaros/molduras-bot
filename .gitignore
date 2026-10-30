@@ -2,9 +2,22 @@ node_modules/
 .clasprc.json
 .env
 .env.local
+
+# Credenciais do WhatsApp (Baileys) - inclui backups/provisorios
 auth_info_baileys/
+auth_info_baileys*/
+
+# Dados da loja (conversas, financeiro, catalogo)
 dados/
+Conversas loja/
+catalogo/
+entradas_molduraria.csv
+saidas_molduraria.csv
+resumo_mensal.csv
+
+# Logs e temporarios
 *.log
 .DS_Store
 /tmp
+.playwright-mcp/
 .superpowers/

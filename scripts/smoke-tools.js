@@ -5,8 +5,9 @@ import { executarTool } from '../lib/tools.js';
 const casos = [
   ['buscar_molduras', { cor: 'preto' }],
   ['listar_materiais', { tipo: 'vidro' }],
-  ['calcular_orcamento', { moldura_id: 'MOL-001', vidro_id: 'VID-001', chapa_id: 'CHA-001', largura_cm: 80, altura_cm: 50 }],
-  ['enviar_foto', { moldura_id: 'MOL-001', legenda: 'olha que linda' }]
+  // 060-116: código real (os MOL-NNN viraram a referência do fornecedor na migração de 2026-06-17)
+  ['calcular_orcamento', { moldura_id: '060-116', vidro_id: 'VID-001', chapa_id: 'CHA-001', largura_cm: 80, altura_cm: 50 }],
+  ['enviar_foto', { moldura_id: '060-116', legenda: 'olha que linda' }]
 ];
 
 for (const [nome, input] of casos) {
