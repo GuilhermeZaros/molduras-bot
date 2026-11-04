@@ -59,5 +59,6 @@ O `.env` (que nunca vai pro GitHub) precisa de:
 GEMINI_API_KEY=     chave do Google Gemini
 APPS_SCRIPT_URL=    URL /exec do Web App do estoque-molduraria
 OFICINA_TOKEN=      senha dos avisos da oficina, gerada pelo menu da planilha
+NUMERO_RESUMO=      WhatsApp do dono, com DDD, que recebe o resumo de cada atendimento
 MODO_TRIAGEM=       true para só coletar pedidos (opcional)
 ```

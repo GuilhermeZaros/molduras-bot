@@ -79,7 +79,7 @@ async function enviarComoJulia(sock, jid, payload) {
 // Estado do atendimento por contato (última atividade, despedida, fim, resumo enviado).
 // Carregado do disco no boot; salvo a cada mudança. Base do resumo + expiração de 72h.
 const atendimentos = lerAtendimentos();
-const NUMERO_RESUMO = process.env.NUMERO_RESUMO || '44999999999';
+const NUMERO_RESUMO = process.env.NUMERO_RESUMO || '';
 
 // Pausa por etiqueta: conversas etiquetadas no WhatsApp Business em que a Julia não responde.
 let pausa = lerPausados();
