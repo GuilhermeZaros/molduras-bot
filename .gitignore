@@ -21,3 +21,9 @@ resumo_mensal.csv
 /tmp
 .playwright-mcp/
 .superpowers/
+.claude/
+docs/
+.agents/
+sql/
+GUIA-INSTALAR-NO-PC-DA-LOJA.md
+iniciar-bruna.bat
