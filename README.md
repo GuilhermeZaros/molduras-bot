@@ -6,20 +6,20 @@ Ela é feita em Node, conversa pelo WhatsApp com o [Baileys](https://github.com/
 
 ## Ligação com o controle de estoque
 
-A Julia não guarda catálogo nem preço. Tudo isso fica no [estoque-molduraria](https://github.com/GuilhermeZaros/estoque-molduraria), o sistema de estoque da loja: uma planilha do Google com um Apps Script na frente, usada também pela equipe no computador e no tablet.
+A Julia não guarda catálogo nem preço. Tudo isso fica no [estoque-molduraria](https://github.com/GuilhermeZaros/estoque-molduraria), o sistema de estoque da loja: uma planilha do Google com um Apps Script na frente, que a equipe usa pelo app do tablet.
 
 ```mermaid
 flowchart LR
     C[Cliente no WhatsApp] <--> J[Julia<br/>este repositório]
     J <-->|API do Web App| A[Apps Script<br/>estoque-molduraria]
     A <--> P[(Planilha do Google)]
-    E[Equipe: computador e tablet] <--> A
+    E[Equipe: app do tablet] <--> A
 ```
 
 Na prática, a conversa entre os dois funciona assim:
 
 - **Cliente pergunta por moldura ou pede orçamento.** A Julia chama a API do estoque (`buscarMolduras`, `listarMateriais`, `consultarProduto`, `calcularOrcamento`). Por isso ela só oferece o que tem e o preço é sempre o mesmo que a loja calcula no balcão. As respostas ficam guardadas 60 segundos pra não pesar na planilha.
-- **Quadro ficou pronto na oficina.** A equipe marca no tablet ou no computador. De minuto em minuto a Julia pergunta à API se tem aviso pendente (`oficinaPendentes`), manda a mensagem pro cliente e confirma (`oficinaConfirmarAviso`). Se o envio falhar, ela tenta de novo na próxima volta.
+- **Quadro ficou pronto na oficina.** A equipe marca no app do tablet. De minuto em minuto a Julia pergunta à API se tem aviso pendente (`oficinaPendentes`), manda a mensagem pro cliente e confirma (`oficinaConfirmarAviso`). Se o envio falhar, ela tenta de novo na próxima volta.
 
 Os dois projetos só se falam pela URL do Web App (`APPS_SCRIPT_URL`). Um não usa código do outro: dá pra atualizar a Julia sem mexer na planilha e vice-versa, desde que a API continue respondendo do mesmo jeito.
 
